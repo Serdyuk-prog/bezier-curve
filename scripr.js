@@ -5,24 +5,45 @@ class Point {
     }
 }
 
+const mpColour = "#E63946";
+const spColour = "#A8DADC";
+const mlColour = "#1D3557";
+const slColour = "lightgray";
+const accuracy = 0.01;
+
 function drawLine(pointA, pointB, context, colour) {
     context.beginPath();
     context.moveTo(pointA.x, pointA.y);
     context.lineTo(pointB.x, pointB.y);
     context.strokeStyle = colour;
+    context.lineWidth = 1;
     context.stroke();
 }
 
 function drawPoint(point, context, colour) {
-    radius = 5;
+    radius = 7;
     context.beginPath();
     context.arc(point.x, point.y, radius, 0, 2 * Math.PI, false);
     context.fillStyle = colour;
     context.fill();
     context.strokeStyle = "black";
+    context.lineWidth = 0;
     context.stroke();
 }
 
+// рисование кривой Безье методом прямой растеризации 
+function drawBezierLine(p0, p1, p2, p3, accuracy, context) {
+    context.beginPath();
+    for (let i = 0; i < 1; i += accuracy) {
+        let p = bezier(i, p0, p1, p2, p3);
+        context.lineTo(p.x, p.y);
+    }
+    context.lineWidth = 2;
+    context.strokeStyle = mlColour;
+    context.stroke();
+}
+
+// вычисление координат точки на кривой по формуле кривой Безье
 function bezier(t, p0, p1, p2, p3) {
     let cX = 3 * (p1.x - p0.x),
         bX = 3 * (p2.x - p1.x) - cX,
@@ -38,15 +59,7 @@ function bezier(t, p0, p1, p2, p3) {
     return new Point(X, Y);
 }
 
-function drawBezierLine(p0, p1, p2, p3, accuracy, context) {
-    context.beginPath();
-    for (let i = 0; i < 1; i += accuracy) {
-        let p = bezier(i, p0, p1, p2, p3);
-        context.lineTo(p.x, p.y);
-    }
-    context.stroke();
-}
-
+// вычисление координат средней точки между вдумя основными
 function getMiddlePoint(pointA, pointB) {
     const X = (pointA.x + pointB.x) / 2;
     const Y = (pointA.y + pointB.y) / 2;
@@ -58,6 +71,7 @@ function clearCanvas(context, canvas) {
     context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+// функции вычислители
 function getDisBwnPoints(pointA, pointB) {
     return Math.sqrt(
         Math.pow(pointA.x - pointB.x, 2) + Math.pow(pointA.y - pointB.y, 2)
@@ -68,6 +82,7 @@ function getRatio(valA, valB) {
     return valA / (valA + valB);
 }
 
+// получение точки внутри вспомогателньой линии
 function getAuxiliaryPoint(P0, P1, P2, A0, A1) {
     const P0P1 = getDisBwnPoints(P0, P1);
     const P1P2 = getDisBwnPoints(P1, P2);
@@ -79,6 +94,7 @@ function getAuxiliaryPoint(P0, P1, P2, A0, A1) {
     return new Point(X, Y);
 }
 
+// получение крайей вспомогательной точки
 function getMissingPoint(startPoint, auxPoint) {
     const X = (startPoint.x + auxPoint.x) / 2;
     const Y = (startPoint.y + auxPoint.y) / 2;
@@ -88,15 +104,16 @@ function getMissingPoint(startPoint, auxPoint) {
 function drawSpline(points, context) {
     let middlePoints = [];
     let auxPoints = [];
+    // рисуем главые точки, высчитываем средние
     for (i = 0; i < points.length - 1; i++) {
-        drawPoint(points[i], context, "blue");
+        drawPoint(points[i], context, mpColour);
         let middlePoint = getMiddlePoint(points[i], points[i + 1]);
         middlePoints.push(middlePoint);
     }
-    drawPoint(points[points.length - 1], context, "blue");
+    drawPoint(points[points.length - 1], context, mpColour);
 
     for (i = 0; i < middlePoints.length - 1; i++) {
-        // точка внутри вспомогательной линии
+        // точка внутри вспомогательной линии до поднятия
         const auxPoint = getAuxiliaryPoint(
             points[i],
             points[i + 1],
@@ -117,15 +134,16 @@ function drawSpline(points, context) {
         auxPoints.push(auxPointsObj);
     }
 
+    // ричуем вспомогательные точки
     for (obj of auxPoints) {
-        drawPoint(obj.P1, context, "gray");
-        drawPoint(obj.P2, context, "gray");
+        drawPoint(obj.P1, context, spColour);
+        drawPoint(obj.P2, context, spColour);
         drawLine(obj.P1, obj.P2, context, "gray");
     }
 
-    // рисуем недостающие точки
+    // задаем и рисуем недостающие крайние точки
     missingPointStart = getMissingPoint(points[0], auxPoints[0].P1);
-    drawPoint(missingPointStart, context, "gray");
+    drawPoint(missingPointStart, context, spColour);
     drawLine(points[0], missingPointStart, context, "gray");
     auxPoints.unshift({
         P2: missingPointStart,
@@ -135,22 +153,20 @@ function drawSpline(points, context) {
         points[points.length - 1],
         auxPoints[auxPoints.length - 1].P2
     );
-    drawPoint(missingPointEnd, context, "gray");
+    drawPoint(missingPointEnd, context, spColour);
     drawLine(points[points.length - 1], missingPointEnd, context, "gray");
     auxPoints.push({
         P1: missingPointEnd,
     });
 
     // рисуем кривые
-    console.log(auxPoints);
-    console.log(points);
     for (i = 0; i < auxPoints.length - 1; i++) {
         drawBezierLine(
             points[i],
             auxPoints[i].P2,
             auxPoints[i + 1].P1,
             points[i + 1],
-            0.01,
+            accuracy,
             context
         );
     }
@@ -159,10 +175,8 @@ function drawSpline(points, context) {
 window.onload = function () {
     const canvas = document.getElementById("c");
     const context = canvas.getContext("2d");
-
     const clearBtn = document.getElementById("clear-btn");
 
-    const accuracy = 0.01;
     let points = [];
 
     clearBtn.addEventListener("click", function (event) {
@@ -172,7 +186,7 @@ window.onload = function () {
 
     canvas.addEventListener("mousedown", function (event) {
         const curPoint = new Point(event.offsetX, event.offsetY);
-        drawPoint(curPoint, context, "blue");
+        drawPoint(curPoint, context, mpColour);
         points.push(curPoint);
 
         if (points.length >= 3) {

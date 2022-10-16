@@ -1,12 +1,33 @@
 body{
-    background-color: antiquewhite;
+    background-color: #A8DADC;
     display: flex;
     align-items: center;
     flex-direction: column;
 }
 
 canvas{
-    background-color: white;
-    border: 1px solid black;
+    background-color: #F1FAEE;
+    border: none;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+    border-radius: 14px;
     margin-top: 60px;
+}
+
+button {
+    margin-top: 20px;
+    font-size: 1.5rem;
+    font-family: 'Roboto Mono', monospace;
+    color: #E63946;
+    background-color: #F1FAEE;
+    border: none;
+    box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
+    border-radius: 4px;
+}
+
+button:hover{
+    cursor: pointer;
+}
+
+button:active {
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
 }
